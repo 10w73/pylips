@@ -2,7 +2,7 @@
 # dude-code - alexander lauterbach
 # 1122
 
-import platform    
+import platform
 import subprocess
 import configparser
 import requests
@@ -16,7 +16,7 @@ from base64 import b64encode,b64decode
 from Crypto.Hash import SHA, HMAC
 from requests.auth import HTTPDigestAuth
 import paho.mqtt.client as mqttc
-import os 
+import os
 
 # Suppress "Unverified HTTPS request is being made" error message
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
@@ -55,7 +55,7 @@ class Pylips:
 
         if args.host is None and self.config["TV"]["host"]=="":
             return print("Please set your TV's IP-address with a --host parameter or in [TV] section in settings.ini")
-            
+
         # check verbose option
         if self.config["DEFAULT"]["verbose"] == "True":
             self.verbose = True
@@ -96,7 +96,7 @@ class Pylips:
                     return print("IP", self.config["TV"]["host"], "seems to be offline. Exiting...")
 
         # load API commands
-        with open(os.path.dirname(os.path.realpath(__file__))+"/available_commands.json") as json_file:  
+        with open(os.path.dirname(os.path.realpath(__file__))+"/available_commands.json") as json_file:
             self.available_commands = json.load(json_file)
 
         # start MQTT listener and updater if required
@@ -173,7 +173,7 @@ class Pylips:
             return False
         else:
             return True
-        
+
     # creates random device id
     def createDeviceId(self):
         return "".join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for _ in range(16))
@@ -279,7 +279,7 @@ class Pylips:
             if type(body) is str:
                 body = json.loads(body)
             if verbose:
-                print("Sending POST request to", str(self.config["TV"]["protocol"]) + str(self.config["TV"]["host"]) + ":" + str(self.config["TV"]["port"]) + "/" + str(self.config["TV"]["apiv"]) + "/" + str(path)) 
+                print("Sending POST request to", str(self.config["TV"]["protocol"]) + str(self.config["TV"]["host"]) + ":" + str(self.config["TV"]["port"]) + "/" + str(self.config["TV"]["apiv"]) + "/" + str(path))
             try:
                 r = session.post(str(self.config["TV"]["protocol"]) + str(self.config["TV"]["host"]) + ":" + str(self.config["TV"]["port"]) + "/" + str(self.config["TV"]["apiv"]) + "/" + str(path), json=body, verify=False, auth=HTTPDigestAuth(str(self.config["TV"]["user"]), str(self.config["TV"]["pass"])), timeout=2)
             except Exception:
@@ -341,14 +341,14 @@ class Pylips:
         else:
             print("Unknown command")
 
-    # updates status immediately after sending a POST request. Currently works only for ambilight and ambihue.        
+    # updates status immediately after sending a POST request. Currently works only for ambilight and ambihue.
     def mqtt_callback(self, path):
         if "ambilight" or "ambihue" or "ambi_brightness" in path:
             self.mqtt_update_ambilight()
             self.mqtt_update_ambihue()
             self.mqtt_update_ambilight_brightness_state()
 
-    # starts MQTT listener that accepts Pylips commands               
+    # starts MQTT listener that accepts Pylips commands
     def start_mqtt_listener(self):
         def on_connect(client, userdata, flags, rc):
             print("Connected to MQTT broker at", self.config["MQTT"]["host"])
@@ -402,7 +402,7 @@ class Pylips:
         if json.dumps(new_status) != json.dumps(self.last_status):
             self.last_status = new_status
             self.mqtt.publish(str(self.config["MQTT"]["topic_status"]), json.dumps(self.last_status), retain = True)
-    
+
     # updates powerstate for MQTT status and returns True if TV is on
     def mqtt_update_powerstate(self):
         powerstate_status = self.get("powerstate",self.verbose,0, False)
@@ -432,7 +432,7 @@ class Pylips:
                 if json.dumps(self.last_status["ambilight"]) != json.dumps(ambilight):
                     self.mqtt.publish(str(self.config["MQTT"]["topic_pylips"]), json.dumps({"status":{
                         "ambilight":ambilight}}), retain = False)
-    
+
     # updates ambihue for MQTT status
     def mqtt_update_ambihue(self):
         ambihue_state = self.run_command("ambihue_state",None,self.verbose, False, False)
