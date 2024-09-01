@@ -1,4 +1,4 @@
-# dev version 1.3.2 - version 1.4.0a1
+# dev version 1.3.2 - version 1.4.0a2
 # dude-code - alexander lauterbach
 # 010924
 
@@ -164,12 +164,17 @@ class Pylips:
         """
         while err_count < int(self.config["DEFAULT"]["num_retries"]):
             if verbose:
-                print("Sending GET request to",
-                      f"{self.config['TV']['protocol']}{self.config['TV']['host']}:{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}")
+                print(
+                    "Sending GET request to",
+                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:"
+                    f"{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}"
+                )
             try:
                 r = session.get(
-                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}",
-                    verify=False, auth=HTTPDigestAuth(self.config["TV"]["user"], self.config["TV"]["pass"]), timeout=2)
+                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:"
+                    f"{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}",
+                    verify=False, auth=HTTPDigestAuth(self.config["TV"]["user"], self.config["TV"]["pass"]), timeout=2
+                )
             except Exception:
                 err_count += 1
                 continue
@@ -182,8 +187,11 @@ class Pylips:
         else:
             if self.config["DEFAULT"].getboolean("mqtt_listen"):
                 self.mqtt_update_status(
-                    {"powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
-                     "dls_state": False})
+                    {
+                        "powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
+                        "dls_state": False
+                    }
+                )
             return json.dumps({"error": "Can not reach the API"})
 
     def post(self, path, body, verbose=True, callback=True, err_count=0):
@@ -207,13 +215,18 @@ class Pylips:
             if isinstance(body, str):
                 body = json.loads(body)
             if verbose:
-                print("Sending POST request to",
-                      f"{self.config['TV']['protocol']}{self.config['TV']['host']}:{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}")
+                print(
+                    "Sending POST request to",
+                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:"
+                    f"{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}"
+                )
             try:
                 r = session.post(
-                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}",
+                    f"{self.config['TV']['protocol']}{self.config['TV']['host']}:"
+                    f"{self.config['TV']['port']}/{self.config['TV']['apiv']}/{path}",
                     json=body, verify=False, auth=HTTPDigestAuth(self.config["TV"]["user"], self.config["TV"]["pass"]),
-                    timeout=2)
+                    timeout=2
+                )
             except Exception:
                 err_count += 1
                 continue
@@ -230,8 +243,10 @@ class Pylips:
         else:
             if self.config["DEFAULT"].getboolean("mqtt_listen") and len(sys.argv) == 1:
                 self.mqtt_update_status(
-                    {"powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
-                     "dls_state": False})
+                    {
+                        "powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
+                        "dls_state": False
+                    })
             print(json.dumps({"error": "Can not reach the API"}))
             return json.dumps({"error": "Can not reach the API"})
 
@@ -260,7 +275,8 @@ class Pylips:
         elif command in self.available_commands["power"]:
             return session.post(
                 f"http://{self.config['TV']['host']}:8008/{self.available_commands['power'][command]['path']}",
-                verify=False, timeout=2)
+                verify=False, timeout=2
+            )
         else:
             print("Unknown command")
 
@@ -366,7 +382,9 @@ class Pylips:
         new_status = dict(self.last_status, **update)
         if json.dumps(new_status) != json.dumps(self.last_status):
             self.last_status = new_status
-            self.mqtt.publish(self.config["MQTT"]["topic_status"], json.dumps(self.last_status), retain=True)
+            self.mqtt.publish(
+                self.config["MQTT"]["topic_status"], json.dumps(self.last_status), retain=True
+            )
 
     def mqtt_update_powerstate(self):
         """
@@ -375,79 +393,97 @@ class Pylips:
         :return: True if the TV is on, otherwise False
         :rtype: bool
         """
-        powerstate_status = self.get("powerstate", self.verbose, 0, False)
+        powerstate_status = self.get("powerstate", self.verbose, 0, True)
         if powerstate_status and powerstate_status[0] == '{':
             powerstate_status = json.loads(powerstate_status)
             if "powerstate" in powerstate_status:
                 if "powerstate" in self.last_status and self.last_status["powerstate"] != powerstate_status[
                     'powerstate']:
-                    self.mqtt.publish(self.config["MQTT"]["topic_pylips"],
-                                      json.dumps({"status": {"powerstate": powerstate_status['powerstate']}}),
-                                      retain=False)
+                    self.mqtt.publish(
+                        self.config["MQTT"]["topic_pylips"],
+                        json.dumps({"status": {"powerstate": powerstate_status['powerstate']}}), retain=False
+                    )
                 if powerstate_status['powerstate'].lower() == "on":
                     return True
             else:
                 self.mqtt_update_status(
-                    {"powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
-                     "dls_state": False})
+                    {
+                        "powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
+                        "dls_state": False
+                    })
         else:
             self.mqtt_update_status(
-                {"powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
-                 "dls_state": False})
+                {
+                    "powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
+                    "dls_state": False
+                })
         return False
 
     def mqtt_update_ambilight(self):
         """
         Update the ambilight status via MQTT.
         """
-        ambilight_status = self.get("ambilight/currentconfiguration", self.verbose, 0, False)
+        ambilight_status = self.get("ambilight/currentconfiguration", self.verbose, 0, True)
         if ambilight_status and ambilight_status[0] == '{':
             ambilight_status = json.loads(ambilight_status)
             if "styleName" in ambilight_status:
                 ambilight = ambilight_status
                 if json.dumps(self.last_status["ambilight"]) != json.dumps(ambilight):
-                    self.mqtt.publish(self.config["MQTT"]["topic_pylips"],
-                                      json.dumps({"status": {"ambilight": ambilight}}), retain=False)
+                    self.mqtt.publish(
+                        self.config["MQTT"]["topic_pylips"],
+                        json.dumps({"status": {"ambilight": ambilight}}), retain=False
+                    )
 
     def mqtt_update_ambihue(self):
         """
         Update the ambihue status via MQTT.
         """
-        ambihue_state = self.run_command("ambihue_state", None, self.verbose, False, False)
+        ambihue_state = self.run_command(
+            "ambihue_state", None, self.verbose, False, True
+        )
         if ambihue_state and ambihue_state[0] == '{':
             ambihue_state = json.loads(ambihue_state)
             if "power" in ambihue_state:
                 ambihue = ambihue_state["power"]
                 if self.last_status["ambihue"] != ambihue:
-                    self.mqtt.publish(self.config["MQTT"]["topic_pylips"], json.dumps({"status": {"ambihue": ambihue}}),
-                                      retain=False)
+                    self.mqtt.publish(
+                        self.config["MQTT"]["topic_pylips"], json.dumps({"status": {"ambihue": ambihue}}),
+                        retain=False
+                    )
 
     def mqtt_update_ambilight_brightness_state(self):
         """
         Update the ambilight brightness state via MQTT.
         """
-        brightness_status = self.run_command("ambilight_brightness_state", None, self.verbose, False)
+        brightness_status = self.run_command(
+            "ambilight_brightness_state", None, self.verbose,
+            False, True
+        )
         if brightness_status and brightness_status[0] == '{':
             brightness_status = json.loads(brightness_status)
             if "values" in brightness_status:
                 ambi_brightness = brightness_status["values"][0]["value"]["data"]["value"]
-                if self.last_status["ambi_brightness"] != ambi_brightness:
-                    self.mqtt.publish(self.config["MQTT"]["topic_pylips"],
-                                      json.dumps({"status": {"ambi_brightness": ambi_brightness}}), retain=False)
+                if self.last_status["ambi_brightness"] != ambi_brightness: self.mqtt.publish(
+                    self.config["MQTT"]["topic_pylips"],
+                    json.dumps({"status": {"ambi_brightness": ambi_brightness}}), retain=False
+                )
 
     def mqtt_update_display_light_sensor_state(self):
         """
         Update the display light sensor state via MQTT.
         """
-        dls_state = self.run_command("display_light_sensor_state", None, self.verbose, False)
+        dls_state = self.run_command(
+            "display_light_sensor_state", None, self.verbose, False, True
+        )
         if dls_state and dls_state[0] == '{':
             dls_state = json.loads(dls_state)
             if "values" in dls_state:
                 dls = dls_state["values"][0]["value"]["data"]["selected_item"]
                 print(dls)
                 if self.last_status["dls_state"] != dls:
-                    self.mqtt.publish(self.config["MQTT"]["topic_pylips"], json.dumps({"status": {"dls_state": dls}}),
-                                      retain=False)
+                    self.mqtt.publish(
+                        self.config["MQTT"]["topic_pylips"], json.dumps({"status": {"dls_state": dls}}), retain=False
+                    )
 
     def start_mqtt_updater(self, verbose=True):
         """
@@ -465,8 +501,10 @@ class Pylips:
                 self.mqtt_update_display_light_sensor_state()
             else:
                 self.mqtt.publish(self.config["MQTT"]["topic_status"], json.dumps(
-                    {"powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
-                     "dls_state": False}), retain=False)
+                    {
+                        "powerstate": "Off", "ambilight": False, "ambihue": False, "ambi_brightness": False,
+                        "dls_state": False
+                    }), retain=False)
             time.sleep(int(self.config["DEFAULT"]["update_interval"]))
 
 
