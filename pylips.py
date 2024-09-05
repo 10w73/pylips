@@ -1,7 +1,7 @@
 # pylips.py
-# version 2.0.0a4
+# version 2.0.1b1
 # dude code - alexander lauterbach
-# 020924
+# 050924
 
 import configparser
 import json
@@ -248,7 +248,7 @@ class Pylips:
             logging.error("Can not reach the API")
             return json.dumps({"error": "Can not reach the API"})
 
-    def run_command(self, command, body=None, new_body=None, verbose=True, callback=True, print_response=True):
+    def run_command(self, command, body=None, new_body=None, verbose=True, print_response=True):
         """
         Run a specified command.
 
@@ -257,7 +257,6 @@ class Pylips:
             body (str, optional): Request body.
             new_body (str, optional): New request body.
             verbose (bool): Display feedback.
-            callback (bool): Callback function.
             print_response (bool): Print the response.
 
         Returns:
@@ -274,7 +273,7 @@ class Pylips:
                 else:
                     body = self.available_commands["post"][command]["body"]
                     path = self.available_commands["post"][command]["path"]
-                return self.post(path, body, verbose, callback)
+                return self.post(path, body, verbose)
             if "body" in self.available_commands["post"][command] and body is not None:
                 if type(body) is str:
                     body = json.loads(body)
@@ -297,27 +296,24 @@ class Pylips:
                     new_body["intent"]["extras"]["query"] = str(body["query"])
                 elif "input_" in command:
                     new_body = self.available_commands["google_assistant"][command]
-                    new_body["intent"]["extras"]["query"] = self.available_commands["post"][command]["body"][
-                        "query"]
-                return self.post(self.available_commands["post"][command]["path"], new_body, verbose, callback)
+                    new_body["intent"]["extras"]["query"] = self.available_commands["post"][command]["body"]["query"]
+                return self.post(self.available_commands["post"][command]["path"], new_body, verbose)
             else:
                 if body is None:
                     body = "{}"  # Initialize body as an empty JSON string if it is None
-                return self.post(self.available_commands["post"][command]["path"], body, verbose, callback)
+                return self.post(self.available_commands["post"][command]["path"], body, verbose)
 
         elif command in self.available_commands["power"]:
             try:
                 return session.post(
                     "http://" + str(self.config["TV"]["host"]) + ":8008/" +
-                    self.available_commands["power"][command][
-                        "path"], verify=False, timeout=10
+                    self.available_commands["power"][command]["path"], verify=False, timeout=10
                 )
             except requests.exceptions.ReadTimeout:
                 logging.error("Request timed out. Retrying...")
                 return session.post(
                     "http://" + str(self.config["TV"]["host"]) + ":8008/" +
-                    self.available_commands["power"][command][
-                        "path"], verify=False, timeout=10
+                    self.available_commands["power"][command]["path"], verify=False, timeout=10
                 )
         else:
             logging.error("Unknown command")
