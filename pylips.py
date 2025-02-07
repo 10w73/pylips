@@ -1,7 +1,7 @@
 # pylips.py
-# version 2.0.1b1
+# version 2.0.2b1
 # dude code - alexander lauterbach
-# 050924
+# 040225
 
 import configparser
 import json
@@ -44,6 +44,10 @@ parser.add_argument("--path", dest="path", help="API's endpoint path")
 parser.add_argument("--body", dest="body", help="Body for post requests")
 parser.add_argument("--verbose", dest="verbose", help="Display feedback")
 parser.add_argument("--apiv", dest="apiv", help="Api version", default="")
+
+# parser.add_argument("--server", dest="server", help="MQTT server hostname or IP address")
+# parser.add_argument("--port", dest="port", help="MQTT server port")
+
 parser.add_argument(
     "--config", dest="config", help="Path to config file",
     default=os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "settings.ini"
@@ -380,16 +384,18 @@ class Pylips:
                     return logging.error("Invalid JSON in mqtt message: %s", msg.payload.decode('utf-8'))
 
         self.mqtt = mqttc.Client()
+
+        self.mqtt.tls_set(
+            self.config["MQTT"]["ca_path"],
+            self.config["MQTT"]["cert_path"],
+            self.config["MQTT"]["key_path"],
+        )
+
         self.mqtt.on_connect = on_connect
         self.mqtt.on_message = on_message
 
         if len(self.config["MQTT"]["user"]) > 0 and len(self.config["MQTT"]["pass"]) > 0:
             self.mqtt.username_pw_set(self.config["MQTT"]["user"], self.config["MQTT"]["pass"])
-        if self.config["MQTT"]["TLS"].lower() == "true":
-            if len(self.config["MQTT"]["cert_path"].strip()) > 0:
-                self.mqtt.tls_set(self.config["MQTT"]["cert_path"])
-            else:
-                self.mqtt.tls_set()
         self.mqtt.connect(str(self.config["MQTT"]["host"]), int(self.config["MQTT"]["port"]), 60)
         if self.config["DEFAULT"]["mqtt_listen"] == "True" and self.config["DEFAULT"]["mqtt_update"] == "False":
             self.mqtt.loop_forever()

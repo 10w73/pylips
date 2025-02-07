@@ -1,7 +1,7 @@
 # msh_config.py
-# version 0.0.1b1
+# version 0.0.2b1
 # dude code - alexander lauterbach
-# 020924
+# 040225
 
 import json
 import time
